@@ -38,7 +38,7 @@ table(phenotype$AID == phenotype$IND_ID)
 # reading genotype data from txt files into dataframe
 genotype <- read.table(
     # directory towards genetic data
-    "dosage_of_complement_variants.txt",
+    "data/dosage_of_complement_variants.txt",
     # defining columns names
     col.names  = c("AID", "chromosome", "position", "MARKER_ID", "REF", "ALT", "AF", "Dosage"),
     # defining columns classes
@@ -175,8 +175,8 @@ haplo_extract <- function(model) {
     rownames_to_column(var = "Haplotype") %>%
     mutate(Haplotype = str_replace(
       Haplotype,
-      "(?<=\\.)\\d{1,2}(?!\\d)",
-      sprintf("%03d", as.numeric(str_extract(Haplotype, "(?<=\\.)\\d{1,2}(?!\\d)")))),
+      "(?<=\\.)\\d{1}(?!\\d)",
+      sprintf("%02d", as.numeric(str_extract(Haplotype, "(?<=\\.)\\d{1}(?!\\d)")))),
       Haplotype = str_replace_all(Haplotype,
                                   c("haplo_genotype." = "Haplo_",
                                     "haplo.base"      = "Reference")))
@@ -216,11 +216,135 @@ cat("\n --------------------------------------------------------- \n")
 #----------#
 # show the structure of the results of the second step  
 results %>% unnest(tidy)
-#----------#
 
+#----------#
 # saving full model results
 saveRDS(results, "29-Jun-23_full_variants.RDS")
 
+# Drop unnecessary results
+results_shrinked <- results %>% select(trait_name, haplotype, tidy)
+
+# save the results in excel file
+install.packages("writexl")
+
+results %>% ungroup() %>% select(tidy) %>% unnest(tidy) %>% readxl::write_xlsx("29-Jun-23_full_variants.txt", row.names = F)
+
+#----------#
+cat("\n --------------------------------------------------------- \n")
+cat(" Haplo.GLM results was saved!                                  ")
+cat("\n --------------------------------------------------------- \n")
+
+#----------#
+# Heatmap
+
+results_tidy <-
+  results %>%
+  select(- c(data, model, haplotype, glance)) %>%
+  unnest(tidy) %>%
+  ungroup() %>%
+  mutate(associated = ifelse(p.value <= 0.05, "Yes", "No"),
+         term = str_replace(term,
+                            "(?<=\\.)\\d{1}(?!\\d)",
+                            sprintf("%02d", as.numeric(str_extract(term, "(?<=\\.)\\d{1}(?!\\d)")))),
+         term = str_replace(term, "haplo_genotype.", "Haplo_")) %>%
+  filter(!str_detect(term, "(Intercept)|PC|Sex|Age|rare"))
+
+#----------#
+# Haplotype plots
+
+results_haplo_plot <-
+  results %>% 
+  select(trait_name, haplotype) %>%
+  unnest(haplotype) %>%
+  ungroup() %>%
+  pivot_longer(cols = - c(trait_name, Haplotype, hap.freq), #, p.value
+               names_to = "SNP",
+               values_to = "labeled_Allele") %>%
+  mutate(POS = str_replace(SNP, "chr10.", "")) %>%
+  inner_join(genotype %>% select(position, REF, ALT, AF) %>% distinct(position, .keep_all = T), by = c("POS" = "position")) %>%
+  #inner_join(wes_gwas_variants %>% mutate(across(POS, as.character)), by = "POS") %>%
+  #mutate(VEP_annot = str_replace_all(VEP_annot, "_variant", "")) %>%
+  #select(- c(SNP.x, CHROM, POS, ID)) %>%
+  #rename(SNP = SNP.y) %>%
+  # In EPACTS wiki referred -> AC: Total Non-reference Allele Count
+  # https://genome.sph.umich.edu/wiki/EPACTS
+  mutate(#associated = ifelse(p.value <= 0.01, "Yes", "No"),
+         Allele = case_when(labeled_Allele == 1 & AF >= 0.5 ~ ALT,
+                            labeled_Allele == 1 & AF <  0.5 ~ REF,
+                            labeled_Allele == 2 & AF <  0.5 ~ ALT,
+                            labeled_Allele == 2 & AF >= 0.5 ~ REF)) %>%
+  select(- c(REF, ALT))
+
+#----------#
+
+cat("\n --------------------------------------------------------- \n")
+cat(" Drawing haplotypes plots . . .                                ")
+cat("\n --------------------------------------------------------- \n")
+
+results_haplo_plot
+
+haplo_plot <- function(trait, df){
+  
+  my_plt <- df %>%
+    ggplot(aes(SNP, term2)) +
+    geom_point(aes(color = diallelic), size = 5.3, alpha = .75, show.legend = F) +
+    geom_text(aes(label = Allele), color = "grey20", size = 4, vjust = .45) +
+    #facet_wrap(~ SNP2, scales = "free_x", nrow = 1) +
+    geom_hline(yintercept = max(df$N_haplo) - .5, lty = 1, linewidth = .7, color = "grey50") +
+    scale_color_manual(values = c("deepskyblue1", "green1", "magenta1", "#FF3434", "gold1", "grey50", "navyblue", "orange2")) +
+    #labs(x = "", y = "") + # paste(trait, "= haplotype + Sex + Age + PC1:10")
+    theme_classic() +
+    theme(panel.background = element_rect(fill = "white"),
+          panel.spacing = unit(0, "lines"),
+          strip.placement = "outside",
+          strip.background = element_blank(),
+          strip.text.x    = element_text(size = 8, face = "plain", angle = 90, vjust = 0.0, hjust = 0.0),
+          legend.position = "bottom",
+          legend.key.size = unit(.2, 'cm'),
+          legend.title    = element_text(size = 12, face = "bold"),
+          legend.text     = element_text(size = 12),
+          axis.text.x     = element_text(size = 8, face = "bold", angle = 25, vjust = 1.2, hjust = 1.1),
+          axis.text.y     = element_text(size = 8, face = "bold"),
+          axis.title      = element_blank())
+  
+  return(my_plt)
+}
+#----------#
+
+haplo_plt_full <- results_tidy %>%
+  group_by(trait_name) %>%
+  right_join(results_haplo_plot, by = c("term" = "Haplotype", "trait_name")) %>%
+  filter(term != "Haplo_rare",
+  #       term == "Reference" | p.value < 0.05
+  ) %>%
+  group_by(trait_name, SNP) %>%
+  mutate(N_haplo   = n_distinct(term),
+         N_allele  = n_distinct(Allele),
+         diallelic = if_else(N_allele == 1, "", Allele),
+         SNP       = str_replace(SNP, "chr10.", "10:")) %>%
+  # shrinking the plot to colored variants
+  #filter(N_allele == 2) %>% 
+  ungroup() %>%
+  mutate(term2 = paste0(term, " (", round(hap.freq, 2), ", ", round(estimate, 2), ", ", round(p.value, 3), ")"),
+         term2 = str_replace_all(term2, "NA, NA", "Beta, P-value"),
+         SNP2 = factor(SNP, levels = unique(SNP), ordered = TRUE),
+         #vep2 = factor(paste0(Gene, "_", VEP_annot), levels = unique(paste0(Gene, "_", VEP_annot))),
+         ) %>%
+  group_by(trait_name) %>%
+  nest() %>%
+  mutate(#plot = data %>% map(point_range_automatic),
+    plot = map2(trait_name, data, haplo_plot),
+    filename = paste0("29-Jun-23_", trait_name, "_reconstructed_haplotypes.png")) %>%
+  ungroup() %>%
+  select(plot, filename)
+
+#----------#
+# saving haplotypes plots in ong format
+walk2(haplo_plt_full$plot,
+      haplo_plt_full$filename,
+      ~ ggsave(plot = .x, filename = .y, width = 8.5, height = 4, dpi = 300, units = "in"))
+
+#----------#
 
 # From now on the rest of the nalysis will be done on personal R core machine (Thu, 14:00, 29-Jun-23).
 # Dariush

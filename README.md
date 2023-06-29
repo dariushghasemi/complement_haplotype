@@ -30,3 +30,5 @@ cat variants.list | awk -F\\t '{print NF}' | sort | uniq -c
 # extracting genotype data of variants found in variants.list file
 bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%DS\n]' /shared/statgen/CHRIS5000/Imputation/HRCv1.1.new/chr10.rsq03.vcf.gz -R variants.list -o dosage_of_complement_variants.txt
 ```
+
+- Haplotype asssociation analysis using the entire 6 variants in MBL2 gene is done (Thu, 18:30, 29-Jun-23).
