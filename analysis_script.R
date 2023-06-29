@@ -122,7 +122,7 @@ head(haplo_dataset)
 
 #----------#
 cat("\n --------------------------------------------------------- \n")
-cat(" Phenotype and genotype data are defined for haplo.GLM!       ")
+cat(" Phenotype and genotype data are defined for haplo.GLM!        ")
 cat("\n --------------------------------------------------------- \n")
 
 
@@ -225,9 +225,10 @@ saveRDS(results, "29-Jun-23_full_variants.RDS")
 results_shrinked <- results %>% select(trait_name, haplotype, tidy)
 
 # save the results in excel file
-install.packages("writexl")
+#install.packages("writexl") #format(., digits = 17)
 
-results %>% ungroup() %>% select(tidy) %>% unnest(tidy) %>% readxl::write_xlsx("29-Jun-23_full_variants.txt", row.names = F)
+results %>% ungroup() %>% select(tidy) %>% unnest(tidy) %>% mutate(p.value = format(p.value, digits = 18)) %>%
+	write.csv("29-Jun-23_full_variants.csv", row.names = F, quote = F)
 
 #----------#
 cat("\n --------------------------------------------------------- \n")
@@ -342,9 +343,15 @@ haplo_plt_full <- results_tidy %>%
 # saving haplotypes plots in ong format
 walk2(haplo_plt_full$plot,
       haplo_plt_full$filename,
-      ~ ggsave(plot = .x, filename = .y, width = 8.5, height = 4, dpi = 300, units = "in"))
+      ~ ggsave(plot = .x, filename = .y, width = 7, height = 3, dpi = 300, units = "in"))
+
+
+#----------#
+cat("\n --------------------------------------------------------- \n")
+cat(" Haplotypes plot is saved successfully!                        ")
+cat("\n --------------------------------------------------------- \n")
 
 #----------#
 
 # From now on the rest of the nalysis will be done on personal R core machine (Thu, 14:00, 29-Jun-23).
-# Dariush
+# Darius
