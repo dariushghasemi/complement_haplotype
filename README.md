@@ -15,7 +15,7 @@ Haplotype analysis for complement system activation GWAS project
 
 data.frame(
     "CHROM" = c(rep(10,each = 6)),
-    "POS"   = c(44854402, 54531226, 54531242, 54531685, 54533360, 54540783)
+    "POS"   = c(44854402, 54528236, 54531226, 54531242, 54531685, 54533360, 54540783)
     ) %>%
     write.table(
         "variants.list", 
@@ -28,7 +28,14 @@ data.frame(
 cat variants.list | awk -F\\t '{print NF}' | sort | uniq -c
 
 # extracting genotype data of variants found in variants.list file
-bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%DS\n]' /shared/statgen/CHRIS5000/Imputation/HRCv1.1.new/chr10.rsq03.vcf.gz -R variants.list -o dosage_of_complement_variants.txt
+bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%DS\n]'
+	 /shared/statgen/CHRIS5000/Imputation/HRCv1.1.new/chr10.rsq03.vcf.gz 
+	 -R data/variants.list 
+	 -o data/dosage_of_complement_variants.txt
 ```
 
 - Haplotype asssociation analysis using the entire 6 variants in MBL2 gene is done (Thu, 18:30, 29-Jun-23).
+
+- Genes names and VEP annotation were also added to the plot. The analysis completed here for now after running the model on the entire 7 variants as a sensistivity analysis (Fri, 00:30, 30-Jun-23).
+
+Dariush
