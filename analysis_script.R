@@ -57,8 +57,8 @@ variant_annotation <- data.frame(
 
 # joining phenotype and genotype data
 pheno_geno <- genotype %>%
-    # filtering the variant in CXCL12 gene for main analysis
-    filter(position != 44854402) %>%
+    ## filtering the variant in CXCL12 gene for main analysis
+    #filter(position != 44854402) %>%
     # creating informative lables for variants CHR:POS
     mutate(SNPid = str_c("chr", chromosome, ":", position)) %>%
     # reshaing the data into wide format to bring variants into the columns
@@ -169,7 +169,7 @@ hap_model <- function(df){
     na.action = "na.geno.keep",
     locus.label = colnames(loci),
     x = TRUE,
-    control = haplo.glm.control(haplo.freq.min = .01,
+    control = haplo.glm.control(haplo.freq.min = .001,
                                 em.c = em_ctrl))
   
   return(model_fit)
@@ -224,7 +224,7 @@ cat("\n --------------------------------------------------------- \n")
 
 #----------#
 # saving full model results
-saveRDS(results, "29-Jun-23_selected_variants.RDS")
+saveRDS(results, "09-Jul-23_full_variants.RDS")
 
 # Drop unnecessary results
 results_shrinked <- results %>% select(trait_name, haplotype, tidy)
@@ -232,8 +232,12 @@ results_shrinked <- results %>% select(trait_name, haplotype, tidy)
 # save the results in excel file
 #install.packages("writexl") #format(., digits = 17)
 
-results %>% ungroup() %>% select(tidy) %>% unnest(tidy) %>% mutate(p.value = format(p.value, digits = 18)) %>%
-	write.csv("30-Jun-23_selected_variants.csv", row.names = F, quote = F)
+results %>%
+   ungroup() %>% 
+   select(tidy) %>% 
+   unnest(tidy) %>% 
+   mutate(p.value = format(p.value, digits = 18)) %>%
+   write.csv("09-Jul-23_full_variants.csv", row.names = F, quote = F)
 
 #----------#
 # show the structure of the results of the second step  
@@ -344,7 +348,7 @@ haplo_plt_full <- results_tidy %>%
   nest() %>%
   mutate(#plot = data %>% map(point_range_automatic),
     plot = map2(trait_name, data, haplo_plot),
-    filename = paste0("30-Jun-23_", trait_name, "_reconstructed_haplotypes_selected.png")) %>%
+    filename = paste0("09-Jul-23_", trait_name, "_reconstructed_haplotypes_full.png")) %>%
   ungroup() %>%
   select(plot, filename)
 

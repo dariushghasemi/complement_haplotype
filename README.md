@@ -38,4 +38,6 @@ bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%DS\n]'
 
 - Genes names and VEP annotation were also added to the plot. The analysis completed here for now after running the model on the entire 7 variants as a sensistivity analysis (Fri, 00:30, 30-Jun-23).
 
+- The threshold for rare haplotype was lowered to `haplo.freq.min = 0.001` to have more rare haplotypes in the set (Sun, 11:30, 09-Jul-23).
+
 Dariush
