@@ -5,3 +5,6 @@
 *.RDS
 data/
 *.png
+.Rhistory
+.Rproj*
+*.Rproj
