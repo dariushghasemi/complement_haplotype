@@ -28,7 +28,7 @@ data.frame(
 cat variants.list | awk -F\\t '{print NF}' | sort | uniq -c
 
 # extracting genotype data of variants found in variants.list file
-bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%DS\n]'
+bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%R2\t%DS\n]'
 	 /shared/statgen/CHRIS5000/Imputation/HRCv1.1.new/chr10.rsq03.vcf.gz 
 	 -R data/variants.list 
 	 -o data/dosage_of_complement_variants.txt
@@ -39,5 +39,7 @@ bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%DS\n]'
 - Genes names and VEP annotation were also added to the plot. The analysis completed here for now after running the model on the entire 7 variants as a sensistivity analysis (Fri, 00:30, 30-Jun-23).
 
 - The threshold for rare haplotype was lowered to `haplo.freq.min = 0.001` to have more rare haplotypes in the set (Sun, 11:30, 09-Jul-23).
+
+- After running the main and sensitivity analyses, a lagacy approach is desired now. To do so, several steps have been retaken. Three other variants added to the list of target variants. The dosage levels as well as imputation accuracy (R2) were extracted from VCF file. The analysis is reimplemented using the previously developed haplotype analysis (Wed, 19:00, 13-Jul-23).
 
 Dariush

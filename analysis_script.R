@@ -39,19 +39,19 @@ genotype <- read.table(
     # directory towards genetic data
     "data/dosage_of_complement_variants.txt",
     # defining columns names
-    col.names  = c("AID", "chromosome", "position", "MARKER_ID", "REF", "ALT", "AF", "Dosage"),
+    col.names  = c("AID", "chromosome", "position", "MARKER_ID", "REF", "ALT", "AF", "R2", "Dosage"),
     # defining columns classes
-    colClasses = c(rep("character", 6), rep("numeric", 2))
+    colClasses = c(rep("character", 6), rep("numeric", 3))
     )
 
 str(genotype)
 #----------#
 
 variant_annotation <- data.frame(
-    "CHROM" = c(rep(10, each = 7)),
-    "POS"   = c(44854402, 54528236, 54531226, 54531242, 54531685, 54533360, 54540783),
-    "Gene"  = c("CXCL12", rep("MBL2", each = 6)),
-    "VEP_annot" = c("intronic", "missense", "missense", "missense", "upstream gene", "upstream gene", "intergenic")
+    "CHROM" = c(rep(10, each = 10)),
+    "POS"   = c(44854402, 54528236, 54531226, 54531235, 54531242, 54531461, 54531685, 54532014, 54533360, 54540783),
+    "Gene"  = c("CXCL12", rep("MBL2", each = 9)),
+    "VEP_annot" = c("intronic", "missense", "missense", "G54D", "missense", "upstream gene", "upstream gene", "upstream gene", "upstream gene", "intergenic")
     )
 #----------#
 
@@ -59,6 +59,8 @@ variant_annotation <- data.frame(
 pheno_geno <- genotype %>%
     ## filtering the variant in CXCL12 gene for main analysis
     #filter(position != 44854402) %>%
+    # select lagacy variants
+    filter(str_detect(position, "54531226|54531235|54531242|54531461|54531685|54532014")) %>%
     # creating informative lables for variants CHR:POS
     mutate(SNPid = str_c("chr", chromosome, ":", position)) %>%
     # reshaing the data into wide format to bring variants into the columns
@@ -224,7 +226,7 @@ cat("\n --------------------------------------------------------- \n")
 
 #----------#
 # saving full model results
-saveRDS(results, "09-Jul-23_full_variants.RDS")
+saveRDS(results, "13-Jul-23_lagacy_variants.RDS")
 
 # Drop unnecessary results
 results_shrinked <- results %>% select(trait_name, haplotype, tidy)
@@ -237,7 +239,7 @@ results %>%
    select(tidy) %>% 
    unnest(tidy) %>% 
    mutate(p.value = format(p.value, digits = 18)) %>%
-   write.csv("09-Jul-23_full_variants.csv", row.names = F, quote = F)
+   write.csv("13-Jul-23_lagacy_variants.csv", row.names = F, quote = F)
 
 #----------#
 # show the structure of the results of the second step  
@@ -286,8 +288,7 @@ results_haplo_plot <-
          Allele = case_when(labeled_Allele == 1 & AF >= 0.5 ~ ALT,
                             labeled_Allele == 1 & AF <  0.5 ~ REF,
                             labeled_Allele == 2 & AF <  0.5 ~ ALT,
-                            labeled_Allele == 2 & AF >= 0.5 ~ REF)) %>%
-  select(- c(REF, ALT))
+                            labeled_Allele == 2 & AF >= 0.5 ~ REF)) #%>% select(- c(REF, ALT))
 
 #----------#
 
@@ -301,23 +302,24 @@ haplo_plot <- function(trait, df){
   
   my_plt <- df %>%
     ggplot(aes(vep2, term2)) +
-    geom_point(aes(color = diallelic), size = 5.3, alpha = .75, show.legend = F) +
-    geom_text(aes(label = Allele), color = "grey20", size = 4, vjust = .45) +
+    #geom_point(aes(color = diallelic), size = 5.3, alpha = .75, show.legend = F) +
+    #geom_point(colour = "white", size = 4.5) +
+    geom_text(aes(label = Allele), color = "grey20", size = 4, vjust = .45) + 
     facet_wrap(~ SNP2, scales = "free_x", nrow = 1) +
     geom_hline(yintercept = max(df$N_haplo) - .5, lty = 1, linewidth = .7, color = "grey50") +
-    scale_color_manual(values = c("deepskyblue1", "green1", "magenta1", "#FF3434", "gold1", "grey50", "navyblue", "orange2")) +
+    scale_color_manual(values = c("deepskyblue3", "#047D4F", "magenta3", "#FF3434", "gold1", "grey50", "navyblue", "orange2")) +
     #labs(x = "", y = "") + # paste(trait, "= haplotype + Sex + Age + PC1:10")
     theme_classic() +
     theme(panel.background = element_rect(fill = "white"),
           panel.spacing = unit(0, "lines"),
           strip.placement = "outside",
           strip.background = element_blank(),
-          strip.text.x    = element_text(size = 8, face = "bold", angle = 35, vjust = 1, hjust = 1.0),
+          strip.text.x    = element_text(size = 8, face = "bold", angle = -25, vjust = 1, hjust = 1.0),
           legend.position = "bottom",
           legend.key.size = unit(.2, 'cm'),
           legend.title    = element_text(size = 12, face = "bold"),
           legend.text     = element_text(size = 12),
-          axis.text.x     = element_text(size = 8, face = "bold", angle = 25, vjust = 1.2, hjust = 1.1),
+          axis.text.x     = element_text(size = 8, face = "bold", angle = -25, vjust = 1.2, hjust = 0.2),
           axis.text.y     = element_text(size = 8, face = "bold"),
           axis.title      = element_blank())
   
@@ -335,20 +337,23 @@ haplo_plt_full <- results_tidy %>%
   mutate(N_haplo   = n_distinct(term),
          N_allele  = n_distinct(Allele),
          diallelic = if_else(N_allele == 1, "", Allele),
-         SNP       = str_replace(SNP, "chr10.", "10:")) %>%
+         SNP       = str_replace(SNP, "chr10.", "10:"),
+         SNP       = str_c(SNP, "_", REF, "/", ALT),
+         term = str_replace(term, "Haplo_", "H")
+         ) %>%
   # shrinking the plot to colored variants
   #filter(N_allele == 2) %>% 
   ungroup() %>%
   mutate(term2 = paste0(term, " (", round(hap.freq, 2), ", ", round(estimate, 2), ", ", round(p.value, 3), ")"),
          term2 = str_replace_all(term2, "NA, NA", "Beta, P-value"),
          SNP2 = factor(SNP, levels = unique(SNP), ordered = TRUE),
-         vep2 = factor(paste0(VEP_annot, "_", Gene), levels = unique(paste0(VEP_annot, "_", Gene))),
+         vep2 = factor(paste0(Gene, "_", VEP_annot), levels = unique(paste0(Gene, "_", VEP_annot))),
          ) %>%
   group_by(trait_name) %>%
   nest() %>%
   mutate(#plot = data %>% map(point_range_automatic),
     plot = map2(trait_name, data, haplo_plot),
-    filename = paste0("09-Jul-23_", trait_name, "_reconstructed_haplotypes_full.png")) %>%
+    filename = paste0("13-Jul-23_", trait_name, "_reconstructed_haplotypes_lagacy.png")) %>%
   ungroup() %>%
   select(plot, filename)
 
