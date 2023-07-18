@@ -42,4 +42,14 @@ bcftools query -f '[%SAMPLE\t%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AF\t%R2\t%DS\n]'
 
 - After running the main and sensitivity analyses, a lagacy approach is desired now. To do so, several steps have been retaken. Three other variants added to the list of target variants. The dosage levels as well as imputation accuracy (R2) were extracted from VCF file. The analysis is reimplemented using the previously developed haplotype analysis (Wed, 19:00, 13-Jul-23).
 
+- To double check and avoid any misspecification of alleles to the variants in the haplotypes illustrations, the characteristics of the variants which were extracted earlier from VCF file is exported in text format (Tue, 14:45, 188-Jul-23).
+
+```bash
+# define column names
+echo -e "AID\tCHROM\tPOS\tID\tREF\tALT\tAF\tR2\tDS" > info_variants.txt
+
+# take the variants' information of a random participant
+echo -e "AID\tCHROM\tPOS\tID\tREF\tALT\tAF\tR2\tDS" > info_variants.txt
+```
+
 Dariush
