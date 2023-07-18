@@ -8,3 +8,5 @@ data/
 .Rhistory
 .Rproj*
 *.Rproj
+output/
+.Rproj.user

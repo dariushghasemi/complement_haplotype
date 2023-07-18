@@ -245,9 +245,17 @@ results %>%
 # show the structure of the results of the second step  
 results_shrinked %>% unnest(tidy)
 
+# save alleles distribution in the haplotypes
+#readRDS("output/13-Jul-23_lagacy_variants.RDS") %>%
+results %>%
+  ungroup() %>%
+  select(haplotype) %>% 
+  unnest(haplotype) %>% 
+  write.table("13-Jul-23_lagacy_haplotypes.txt", sep = "\t", row.names = F, quote = F)
+
 #----------#
 cat("\n --------------------------------------------------------- \n")
-cat(" Haplo.GLM results was saved!                                  ")
+cat(" Haplo.GLM results were saved!                                  ")
 cat("\n --------------------------------------------------------- \n")
 
 #----------#
