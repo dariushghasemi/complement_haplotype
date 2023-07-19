@@ -51,5 +51,11 @@ echo -e "AID\tCHROM\tPOS\tID\tREF\tALT\tAF\tR2\tDS" > info_variants.txt
 # take the variants' information of a random participant
 echo -e "AID\tCHROM\tPOS\tID\tREF\tALT\tAF\tR2\tDS" > info_variants.txt
 ```
+- The reference haplotypes carryies only the major alleles for each of the variants. We expected to have the reference allele (RA) showing up in each varinat in the reference haplotype. However, there were three variants with alternate/effect allele (EA) having frequency >0.50, meaning that the EA were the major allele for them, but for the rest of the variants RA were the major allele. Here for consistency of the alleles in the reference haplotype, we align the EA to represent the minor allele for all of the varinats, esp. by flipping the RA and EA for those three variants. To do so, we do some calculations:
+    1. take a complementary AF of the aligned SNPs: `AF_aligned = 1 - AF`,
+    2. take a complementary dosage levels for them: `DS_aligned = 2 - DS`, 
+    3. flip the the refrence and effect alleles: if `AF < 0.50` then `RA <-> EA`.
+
+- The haplotype analyses for the 4 set of variants (main, sesitivity, legacy, all) were executed using the aligned variants on Wed, 20:20, 19-Jul-23.
 
 Dariush

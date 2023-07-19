@@ -44,6 +44,17 @@ genotype <- read.table(
     colClasses = c(rep("character", 6), rep("numeric", 3))
     )
 
+genotype <- genotype %>%
+    # change the non-aligned columns' name for consitency with the rest of the script
+    rename(REF_org = REF, ALT_org = ALT, AF_org = AF, DS_org = Dosage) %>%
+    # flipping the alleles with ALT allele frequency > 0.50
+    mutate(
+      REF = case_when(AF_org >= 0.5 ~ ALT_org, TRUE ~ REF_org),
+      ALT = case_when(AF_org >= 0.5 ~ REF_org, TRUE ~ ALT_org),
+      AF  = case_when(AF_org >= 0.5 ~ 1 - AF_org, TRUE ~ AF_org),
+      Dosage = case_when(AF_org >= 0.5 ~ 2 - DS_org, TRUE ~ DS_org)
+      ) 
+
 str(genotype)
 #----------#
 
@@ -55,12 +66,26 @@ variant_annotation <- data.frame(
     )
 #----------#
 
+# definingyour desired set among the 4 sets of varainats below: 
+desired_set <- "all"
+
+# lagacy
+variants_legacy <- c("54531226", "54531235", "54531242", "54531461", "54531685", "54532014")
+
+# main
+variants_main  <- c("54528236", "54531226", "54531242", "54531685", "54533360", "54540783")
+
+# sensitivity
+variants_sensitive <- c("44854402", "54528236", "54531226", "54531242", "54531685", "54533360", "54540783")
+
+# all
+variants_all <- c("44854402", "54528236", "54531226", "54531235", "54531242", "54531461", "54531685", "54532014", "54533360", "54540783")
+
+#----------#
 # joining phenotype and genotype data
 pheno_geno <- genotype %>%
-    ## filtering the variant in CXCL12 gene for main analysis
-    #filter(position != 44854402) %>%
-    # select lagacy variants
-    filter(str_detect(position, "54531226|54531235|54531242|54531461|54531685|54532014")) %>%
+    ## filtering the variants present in each variants set
+    filter(position %in% variants_all) %>%
     # creating informative lables for variants CHR:POS
     mutate(SNPid = str_c("chr", chromosome, ":", position)) %>%
     # reshaing the data into wide format to bring variants into the columns
@@ -225,8 +250,20 @@ cat(" Haplo.GLM model was fitted and show the results!              ")
 cat("\n --------------------------------------------------------- \n")
 
 #----------#
+# saving the time and date for saving the files
+
+# today date
+date <- Sys.Date()
+
+# abbreviated weekday
+#day <- format(date, format = "%a")
+
+# full date
+date <- format(date, format = "%d-%b-%y")
+
+#----------#
 # saving full model results
-saveRDS(results, "13-Jul-23_lagacy_variants.RDS")
+saveRDS(results, paste0(date, "_", desired_set, "_variants.RDS"))
 
 # Drop unnecessary results
 results_shrinked <- results %>% select(trait_name, haplotype, tidy)
@@ -239,7 +276,7 @@ results %>%
    select(tidy) %>% 
    unnest(tidy) %>% 
    mutate(p.value = format(p.value, digits = 18)) %>%
-   write.csv("13-Jul-23_lagacy_variants.csv", row.names = F, quote = F)
+   write.csv(paste0(date, "_", desired_set, "_variants.csv"), row.names = F, quote = F)
 
 #----------#
 # show the structure of the results of the second step  
@@ -251,7 +288,7 @@ results %>%
   ungroup() %>%
   select(haplotype) %>% 
   unnest(haplotype) %>% 
-  write.table("13-Jul-23_lagacy_haplotypes.txt", sep = "\t", row.names = F, quote = F)
+  write.table(paste0(date, "_", desired_set, "_variants.txt"), sep = "\t", row.names = F, quote = F)
 
 #----------#
 cat("\n --------------------------------------------------------- \n")
@@ -361,7 +398,7 @@ haplo_plt_full <- results_tidy %>%
   nest() %>%
   mutate(#plot = data %>% map(point_range_automatic),
     plot = map2(trait_name, data, haplo_plot),
-    filename = paste0("13-Jul-23_", trait_name, "_reconstructed_haplotypes_lagacy.png")) %>%
+    filename = paste0(date, "_", desired_set, "_", trait_name, "_reconstructed_haplotypes.png")) %>%
   ungroup() %>%
   select(plot, filename)
 
@@ -369,7 +406,7 @@ haplo_plt_full <- results_tidy %>%
 # saving haplotypes plots in ong format
 walk2(haplo_plt_full$plot,
       haplo_plt_full$filename,
-      ~ ggsave(plot = .x, filename = .y, width = 7.5, height = 4, dpi = 300, units = "in"))
+      ~ ggsave(plot = .x, filename = .y, width = 11.5, height = 5, dpi = 300, units = "in"))
 
 
 #----------#
