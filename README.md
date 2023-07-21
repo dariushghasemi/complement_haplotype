@@ -57,5 +57,6 @@ echo -e "AID\tCHROM\tPOS\tID\tREF\tALT\tAF\tR2\tDS" > info_variants.txt
     3. flip the the refrence and effect alleles: if `AF < 0.50` then `RA <-> EA`.
 
 - The haplotype analyses for the 4 set of variants (main, sesitivity, legacy, all) were executed using the aligned variants on Wed, 20:20, 19-Jul-23.
+- The results of the above 4 haplotype analyses were sent on thu, 08:30, 20-Jul-23.
 
 Dariush
