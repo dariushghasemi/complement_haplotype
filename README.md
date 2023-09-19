@@ -61,5 +61,5 @@ echo -e "AID\tCHROM\tPOS\tID\tREF\tALT\tAF\tR2\tDS" > info_variants.txt
 - The results of the above 4 haplotype analyses were sent on thu, 08:30, 20-Jul-23.
 
 - Short report on the haplotype association analysis details and the parameters of the models have been prepared for the revision of the paper (Fri, 22:00, 01-Sep-23). 
-
+- Revised paper was ubmitted to the journal (Mon, 11:00, 04-Sep-23).
 Dariush
